@@ -18,48 +18,60 @@ class ImageProcessor:
         self.right_frame.grid(column=1, row=0, padx=10, pady=10)
 
         # Додаємо елементи в лівий фрейм (картинка)
-        self.image_label = tk.Label(self.left_frame)
+        self.image_label = tk.Canvas(self.left_frame, width=800, height=600)
         self.image_label.pack()
 
         # Додаємо елементи в правий фрейм
         self.upload_button = tk.Button(self.right_frame, text="Upload Image", command=self.upload_image)
         self.upload_button.grid(column=0, row=0)
 
+        # Кнопки для обрізання
+        self.crop_button = tk.Button(self.right_frame, text="Crop", command=self.crop_image)
+        self.crop_button.grid(column=0, row=1)
+
         self.threshold_label = tk.Label(self.right_frame, text="Black Threshold:")
-        self.threshold_label.grid(column=0, row=1)
+        self.threshold_label.grid(column=0, row=2)
 
         self.threshold_entry = tk.Entry(self.right_frame)
-        self.threshold_entry.grid(column=0, row=2)
+        self.threshold_entry.grid(column=0, row=3)
 
         self.sector_label = tk.Label(self.right_frame, text="Number of Sectors:")
-        self.sector_label.grid(column=0, row=3)
+        self.sector_label.grid(column=0, row=4)
 
         self.sector_selector = ttk.Spinbox(self.right_frame, from_=2, to=10)
-        self.sector_selector.grid(column=0, row=4)
+        self.sector_selector.grid(column=0, row=5)
 
         self.process_button = tk.Button(self.right_frame, text="Process Image", command=self.process_image)
-        self.process_button.grid(column=0, row=5)
+        self.process_button.grid(column=0, row=6)
 
         self.feature_vector_label = tk.Label(self.right_frame, text="Feature Vector:")
-        self.feature_vector_label.grid(column=0, row=6)
+        self.feature_vector_label.grid(column=0, row=7)
 
         self.feature_vector_text = tk.Text(self.right_frame, height=10, width=50)
-        self.feature_vector_text.grid(column=0, row=7)
+        self.feature_vector_text.grid(column=0, row=8)
 
         self.normalized_vector_label = tk.Label(self.right_frame, text="Normalized Vector (S1):")
-        self.normalized_vector_label.grid(column=0, row=8)
+        self.normalized_vector_label.grid(column=0, row=9)
 
-        # self.normalized_vector_text_s1 = tk.Text(self.right_frame, height=10, width=50)
-        # self.normalized_vector_text_s1.grid(column=0, row=9)
-
-        self.normalized_vector_text_s1 = tk.Text(self.right_frame, height=2, width=50)  # Для нормалізації за сумою
+        self.normalized_vector_text_s1 = tk.Text(self.right_frame, height=2, width=50)
         self.normalized_vector_text_s1.grid(column=0, row=10)
 
-        self.normalized_vector_text_s2 = tk.Text(self.right_frame, height=2, width=50)  # Для нормалізації за модулем
+        self.normalized_vector_text_s2 = tk.Text(self.right_frame, height=2, width=50)
         self.normalized_vector_text_s2.grid(column=0, row=11)
 
         self.image = None
         self.processed_image = None
+
+        # Додаємо змінні для обрізання
+        self.start_x = None
+        self.start_y = None
+        self.rect_id = None
+        self.crop_rectangle = None
+
+        # Встановлюємо обробники для вибору обрізання
+        self.image_label.bind("<ButtonPress-1>", self.start_crop)
+        self.image_label.bind("<B1-Motion>", self.update_crop)
+        self.image_label.bind("<ButtonRelease-1>", self.perform_crop)
 
     def upload_image(self):
         file_path = filedialog.askopenfilename()
@@ -68,7 +80,7 @@ class ImageProcessor:
             self.display_image(self.image)
 
     def display_image(self, image):
-        max_width, max_height = 1360, 1080
+        max_width, max_height = 800, 600
 
         original_width, original_height = image.size
         scaling_factor = min(max_width / original_width, max_height / original_height, 1)
@@ -78,16 +90,67 @@ class ImageProcessor:
 
         # Змінюємо розмір зображення з урахуванням максимальних розмірів
         img = image.resize((new_width, new_height), Image.LANCZOS)
-        img = ImageTk.PhotoImage(img)
+        self.tk_image = ImageTk.PhotoImage(img)
 
-        # Відображаємо зображення
-        self.image_label.config(image=img)
-        self.image_label.image = img
+        self.image_label.delete("all")
+        x_offset = (800 - new_width) // 2
+        y_offset = (600 - new_height) // 2
+
+        # Display the image centered in the canvas
+        self.image_label.create_image(x_offset, y_offset, anchor=tk.NW, image=self.tk_image)
+        self.image_label.image = self.tk_image
+
+        # Store the scaling factor for cropping
+        self.scaling_factor = scaling_factor
+
+    def start_crop(self, event):
+        # Store the initial click coordinates
+        self.start_x = event.x
+        self.start_y = event.y
+        if self.rect_id:
+            self.image_label.delete(self.rect_id)
+        self.rect_id = None
+
+    def update_crop(self, event):
+        if self.rect_id:
+            self.image_label.delete(self.rect_id)
+
+        # Create a rectangle for selection
+        self.rect_id = self.image_label.create_rectangle(self.start_x, self.start_y, event.x, event.y, outline="red")
+
+    def perform_crop(self, event):
+        end_x = event.x
+        end_y = event.y
+
+        # Calculate the offsets to adjust for the centered image
+        x_offset = (800 - self.tk_image.width()) // 2
+        y_offset = (600 - self.tk_image.height()) // 2
+
+        # Adjust crop rectangle based on the offsets
+        adjusted_start_x = int((self.start_x - x_offset) / self.scaling_factor)
+        adjusted_start_y = int((self.start_y - y_offset) / self.scaling_factor)
+        adjusted_end_x = int((end_x - x_offset) / self.scaling_factor)
+        adjusted_end_y = int((end_y - y_offset) / self.scaling_factor)
+
+        # Store the adjusted coordinates for cropping
+        self.crop_rectangle = (adjusted_start_x, adjusted_start_y, adjusted_end_x, adjusted_end_y)
+
+    def crop_image(self):
+        if self.crop_rectangle and self.image:
+            # Обрізаємо зображення за вибраними координатами
+            cropped_image = self.image.crop(self.crop_rectangle)
+            self.processed_image = cropped_image  # Зберігаємо обрізане зображення для подальшої обробки
+            self.display_image(cropped_image)
+
+            if self.rect_id:
+                self.image_label.delete(self.rect_id)
+                self.rect_id = None
 
     def process_image(self):
-        if self.image is None:
-            messagebox.showerror("Error", "No image uploaded")
-            return
+        if self.processed_image is None:
+            if self.image is None:
+                messagebox.showerror("Error", "No image uploaded or cropped")
+                return
 
         threshold = self.threshold_entry.get()
         if not threshold.isdigit():
@@ -95,7 +158,7 @@ class ImageProcessor:
             return
 
         threshold = int(threshold)
-        self.processed_image = self.image.convert("L")
+        self.processed_image = self.processed_image.convert("L")
         self.processed_image = self.processed_image.point(lambda p: 255 if p > threshold else 0, '1')
 
         # Створюємо копію для обчислень, без сегментів
@@ -122,7 +185,6 @@ class ImageProcessor:
             draw.line((center_x, center_y, line_end_x, line_end_y), fill="red", width=2)
 
     def calculate_feature_vector(self):
-        # img_array = np.array(self.processed_image)
         img_array = np.array(self.image_for_vector_calculation)
         height, width = img_array.shape
         total_black_pixels = np.sum(img_array == 0)
@@ -157,27 +219,23 @@ class ImageProcessor:
         self.normalized_vector_text_s2.delete(1.0, tk.END)
 
         # Форматування тексту
-        feature_vector_str = ', '.join([f'x{i + 1}: {count}' for i, count in enumerate(feature_vector)])
-        self.feature_vector_text.insert(tk.END, f"[{feature_vector_str}]")
+        feature_vector_str = ', '.join([f'S{i + 1}: {count}' for i, count in enumerate(feature_vector)])
+        self.feature_vector_text.insert(tk.END, feature_vector_str)
 
         # Нормалізація за сумою (варіант 1)
         normalized_vector_s1 = [x / total_black_pixels if total_black_pixels > 0 else 0 for x in feature_vector]
-        normalized_vector_str_s1 = ', '.join([f'(S{i + 1}, {val:.4f})' for i, val in enumerate(normalized_vector_s1)])
+        normalized_vector_str_s1 = ', '.join(
+            [f'(S{i + 1}, {val:.2f})' for i, val in enumerate(normalized_vector_s1)])
         self.normalized_vector_text_s1.insert(tk.END, f"[{normalized_vector_str_s1}]")
 
         # Нормалізація за модулем (варіант 2)
         max_value = max(feature_vector) if feature_vector else 1  # Уникнути ділення на 0
         normalized_vector_s2 = [x / max_value if max_value > 0 else 0 for x in feature_vector]
-        normalized_vector_str_s2 = ', '.join([f'(M{i + 1}, {val:.4f})' for i, val in enumerate(normalized_vector_s2)])
+        normalized_vector_str_s2 = ', '.join(
+            [f'(M{i + 1}, {val:.2f})' for i, val in enumerate(normalized_vector_s2)])
         self.normalized_vector_text_s2.insert(tk.END, f"[{normalized_vector_str_s2}]")
 
-    def create_sector_mask(self, width, height, angle_start, angle_end):
-        # Створюємо маску для визначення сектору в зображенні
-        Y, X = np.ogrid[:height, :width]
-        cx, cy = width, height  # Нижній правий кут
-        angles = np.degrees(np.arctan2(Y - cy, X - cx)) % 90
-        mask = (angles >= angle_start) & (angles < angle_end)
-        return mask
+        # return np.array(feature_vector)
 
 
 if __name__ == "__main__":
