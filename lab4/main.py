@@ -52,32 +52,30 @@ class DirectionDrawingApp:
         self.canvas2.bind("<Button-1>", self.start_draw2)
         self.canvas2.bind("<B1-Motion>", self.draw2)
 
+        self.px_label = tk.Label(root, text="PX:")
+        self.px_label.grid(column=0, row=1, columnspan=2)
+        self.px_selector = tk.Spinbox(root, from_=10, to=100)
+        self.px_selector.grid(column=0, row=2, columnspan=2)
+
         # Label for similarity result
         self.similarity_label_f = tk.Label(root, text="Similarity with full vector: N/A", font=("Century Gothic", 11))
-        self.similarity_label_f.grid(row=1, column=0, columnspan=2, pady=5)
+        self.similarity_label_f.grid(row=3, column=0, columnspan=2, pady=5)
         self.similarity_label_s = tk.Label(root, text="Similarity with short vector: N/A", font=("Century Gothic", 11))
-        self.similarity_label_s.grid(row=2, column=0, columnspan=2, pady=5)
+        self.similarity_label_s.grid(row=4, column=0, columnspan=2, pady=5)
 
         # Text widgets to display vectors
         self.vector1_text_f = tk.Text(root, height=4, width=40, font=("Century Gothic", 10), wrap="none")
-        self.vector1_text_f.grid(row=3, column=0, padx=10)
+        self.vector1_text_f.grid(row=5, column=0, padx=10)
         self.vector2_text_f = tk.Text(root, height=4, width=40, font=("Century Gothic", 10), wrap="none")
-        self.vector2_text_f.grid(row=3, column=1, padx=10)
+        self.vector2_text_f.grid(row=5, column=1, padx=10)
         self.vector1_text_s = tk.Text(root, height=4, width=40, font=("Century Gothic", 10), wrap="none")
-        self.vector1_text_s.grid(row=4, column=0, padx=10)
+        self.vector1_text_s.grid(row=6, column=0, padx=10)
         self.vector2_text_s = tk.Text(root, height=4, width=40, font=("Century Gothic", 10), wrap="none")
-        self.vector2_text_s.grid(row=4, column=1, padx=10)
+        self.vector2_text_s.grid(row=6, column=1, padx=10)
 
         # Button to calculate similarity
-
-        self.px_label = tk.Label(root, text="PX:")
-        self.px_label.grid(column=0, row=5)
-
-        self.px_selector = tk.Spinbox(root, from_=10, to=100)
-        self.px_selector.grid(column=1, row=5)
-
         self.compare_button = tk.Button(root, text="Compare", command=self.compare_drawings)
-        self.compare_button.grid(row=6, column=0, columnspan=2, pady=10)
+        self.compare_button.grid(row=7, column=0, columnspan=2, pady=10)
 
     # Start drawing on canvas 1
     def start_draw1(self, event):
