@@ -2,15 +2,15 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from PIL import Image, ImageTk, ImageOps, ImageDraw
 import numpy as np
-from perceptron import Perceptron
 
 
 class ImageProcessor:
     def __init__(self, root, vectors_s1_class1_max, vectors_s1_class1_min,
                  vectors_s1_class2_max, vectors_s1_class2_min,
+                 vectors_s1_class3_max, vectors_s1_class3_min,
                  vectors_m1_class1_max, vectors_m1_class1_min,
                  vectors_m1_class2_max, vectors_m1_class2_min,
-                 all_vectors, y):
+                 vectors_m1_class3_max, vectors_m1_class3_min):
         self.root = root
         self.root.title("Image Processor")
 
@@ -40,11 +40,11 @@ class ImageProcessor:
         self.threshold_entry = tk.Entry(self.right_frame)
         self.threshold_entry.grid(column=0, row=3)
 
-        self.speed_label = tk.Label(self.right_frame, text="Learning speed:")
-        self.speed_label.grid(column=0, row=4)
-
-        self.speed_selector = ttk.Entry(self.right_frame)
-        self.speed_selector.grid(column=0, row=5)
+        # self.sector_label = tk.Label(self.right_frame, text="Number of Sectors:")
+        # self.sector_label.grid(column=0, row=4)
+        #
+        # self.sector_selector = ttk.Spinbox(self.right_frame, from_=2, to=10)
+        # self.sector_selector.grid(column=0, row=5)
 
         self.process_button = tk.Button(self.right_frame, text="Process Image", command=self.process_image)
         self.process_button.grid(column=0, row=6)
@@ -76,11 +76,11 @@ class ImageProcessor:
         self.vector_text_s = tk.Text(self.right_frame, height=6, width=55)
         self.vector_text_s.grid(column=0, row=15)
 
-        # self.vector_label_m = tk.Label(self.right_frame, text="Classes vectors M:")
-        # self.vector_label_m.grid(column=0, row=16)
-        #
-        # self.vector_text_m = tk.Text(self.right_frame, height=6, width=55)
-        # self.vector_text_m.grid(column=0, row=17)
+        self.vector_label_m = tk.Label(self.right_frame, text="Classes vectors M:")
+        self.vector_label_m.grid(column=0, row=16)
+
+        self.vector_text_m = tk.Text(self.right_frame, height=6, width=55)
+        self.vector_text_m.grid(column=0, row=17)
 
         self.image = None
         self.processed_image = None
@@ -100,14 +100,15 @@ class ImageProcessor:
         self.vectors_s1_class1_min = vectors_s1_class1_min
         self.vectors_s1_class2_max = vectors_s1_class2_max
         self.vectors_s1_class2_min = vectors_s1_class2_min
+        self.vectors_s1_class3_max = vectors_s1_class3_max
+        self.vectors_s1_class3_min = vectors_s1_class3_min
 
         self.vectors_m1_class1_max = vectors_m1_class1_max
         self.vectors_m1_class2_min = vectors_m1_class1_min
         self.vectors_m1_class2_max = vectors_m1_class2_max
         self.vectors_m1_class1_min = vectors_m1_class2_min
-
-        self.all_vectors = all_vectors
-        self.y = y
+        self.vectors_m1_class3_max = vectors_m1_class3_max
+        self.vectors_m1_class3_min = vectors_m1_class3_min
 
         self.display_vectors()
 
@@ -118,21 +119,25 @@ class ImageProcessor:
             "Class 1 Vector S1 Max": self.vectors_s1_class1_max,
             "Class 1 Vector S1 Min": self.vectors_s1_class1_min,
             "Class 2 Vector S1 Max": self.vectors_s1_class2_max,
-            "Class 2 Vector S1 Min": self.vectors_s1_class2_min
+            "Class 2 Vector S1 Min": self.vectors_s1_class2_min,
+            "Class 3 Vector S1 Max": self.vectors_s1_class3_max,
+            "Class 3 Vector S1 Min": self.vectors_s1_class3_min
         }
 
-        # all_vectors_m = {
-        #     "Class 1 Vector M1 Max": self.vectors_m1_class1_max,
-        #     "Class 1 Vector M1 Min": self.vectors_m1_class1_min,
-        #     "Class 2 Vector M1 Max": self.vectors_m1_class2_max,
-        #     "Class 2 Vector M1 Min": self.vectors_m1_class2_min
-        # }
+        all_vectors_m = {
+            "Class 1 Vector M1 Max": self.vectors_m1_class1_max,
+            "Class 1 Vector M1 Min": self.vectors_m1_class1_min,
+            "Class 2 Vector M1 Max": self.vectors_m1_class2_max,
+            "Class 2 Vector M1 Min": self.vectors_m1_class2_min,
+            "Class 3 Vector M1 Max": self.vectors_m1_class3_max,
+            "Class 3 Vector M1 Min": self.vectors_m1_class3_min
+        }
 
         for class_name, vectors in all_vectors_s.items():
             self.vector_text_s.insert(tk.END, f"{class_name}: {[round(float(value), 4) for value in vectors]}\n")
 
-        # for class_name, vectors in all_vectors_m.items():
-        #     self.vector_text_m.insert(tk.END, f"{class_name}: {[round(float(value), 4) for value in vectors]}\n")
+        for class_name, vectors in all_vectors_m.items():
+            self.vector_text_m.insert(tk.END, f"{class_name}: {[round(float(value), 4) for value in vectors]}\n")
 
     def upload_image(self):
         file_path = filedialog.askopenfilename()
@@ -291,7 +296,6 @@ class ImageProcessor:
         normalized_vector_str_s1 = ', '.join(
             [f'(S{i + 1}, {val:.4f})' for i, val in enumerate(normalized_vector_s1)])
         self.normalized_vector_text_s1.insert(tk.END, f"[{normalized_vector_str_s1}]")
-        print("vector \n", [round(float(value), 4) for value in normalized_vector_s1])
 
         # Нормалізація за модулем (варіант 2)
         max_value = max(feature_vector) if feature_vector else 1  # Уникнути ділення на 0
@@ -300,30 +304,23 @@ class ImageProcessor:
             [f'(M{i + 1}, {val:.4f})' for i, val in enumerate(normalized_vector_s2)])
         self.normalized_vector_text_s2.insert(tk.END, f"[{normalized_vector_str_s2}]")
 
-        try:
-            eta = float(self.speed_selector.get())
-        except ValueError:
-            messagebox.showerror("Error", "Invalid eta value. Please enter a valid number.")
-            return
+        class_bounds = {
+            'Class 1': (self.vectors_s1_class1_min, self.vectors_s1_class1_max),
+            'Class 2': (self.vectors_s1_class2_min, self.vectors_s1_class2_max),
+            'Class 3': (self.vectors_s1_class3_min, self.vectors_s1_class3_max),
+        }
 
-        X = np.array(self.all_vectors)
-        y = np.array(self.y)
-        vector_test = np.array(normalized_vector_s1)
-
-        perceptron = Perceptron(eta=eta, n_iter=10)
-
-        perceptron.fit(X, y)
-
-        prediction = perceptron.predict(vector_test)
-        print("answer" + str(prediction))
+        classification_result = self.classify_image(normalized_vector_s1, class_bounds)
 
         self.class_vector_text.delete(1.0, tk.END)
-        if prediction == 1:
-            self.class_vector_text.insert(tk.END, "The image belongs to Class 1")
-        elif prediction == -1:
-            self.class_vector_text.insert(tk.END, "The image belongs to Class 2")
-        else:
-            self.class_vector_text.insert(tk.END, "The image does not belong to any class.")
+        self.class_vector_text.insert(tk.END, classification_result)
+
+    def classify_image(self, input_vector, class_bounds):
+        for class_name, (s_min, s_max) in class_bounds.items():
+            if all(s_min[i] < input_vector[i] < s_max[i] for i in range(len(input_vector))):
+                return f"The image belongs to {class_name}."
+
+        return "The image does not belong to any class."
 
 
 if __name__ == "__main__":

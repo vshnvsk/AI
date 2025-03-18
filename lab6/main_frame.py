@@ -22,6 +22,10 @@ class ImageProcessor:
                                        command=lambda: self.set_class(2))
         self.class1_button.grid(column=0, row=2, pady=5)
 
+        self.class1_button = tk.Button(self.frame, text="Upload Class 3 Images",
+                                       command=lambda: self.set_class(3))
+        self.class1_button.grid(column=0, row=3, pady=5)
+
         self.upload_button = tk.Button(self.frame, text="Open Image Processor", command=self.open_image_processor)
         self.upload_button.grid(column=0, row=4, pady=5)
 
@@ -33,19 +37,22 @@ class ImageProcessor:
         self.vectors_m1_class1 = []
         self.vectors_s1_class2 = []
         self.vectors_m1_class2 = []
+        self.vectors_s1_class3 = []
+        self.vectors_m1_class3 = []
 
         self.vectors_s1_class1_max = []
         self.vectors_s1_class1_min = []
         self.vectors_s1_class2_max = []
         self.vectors_s1_class2_min = []
+        self.vectors_s1_class3_max = []
+        self.vectors_s1_class3_min = []
 
         self.vectors_m1_class1_max = []
         self.vectors_m1_class2_min = []
         self.vectors_m1_class2_max = []
         self.vectors_m1_class1_min = []
-
-        self.all_vectors = []
-        self.y = []
+        self.vectors_m1_class3_max = []
+        self.vectors_m1_class3_min = []
 
     def set_class(self, class_num):
         self.selected_class = class_num
@@ -60,12 +67,14 @@ class ImageProcessor:
                                               self.vectors_s1_class1_min,
                                               self.vectors_s1_class2_max,
                                               self.vectors_s1_class2_min,
+                                              self.vectors_s1_class3_max,
+                                              self.vectors_s1_class3_min,
                                               self.vectors_m1_class1_max,
                                               self.vectors_m1_class2_min,
                                               self.vectors_m1_class2_max,
                                               self.vectors_m1_class1_min,
-                                              self.all_vectors,
-                                              self.y)
+                                              self.vectors_m1_class3_max,
+                                              self.vectors_m1_class3_min)
 
     def open_image_window(self, image_path):
         self.image_paths = image_path
@@ -114,7 +123,7 @@ class ImageProcessor:
         file_paths = filedialog.askopenfilenames(title='Select Images',
                                                  filetypes=[('Image Files', '*.bmp *.jpeg *.png')])
 
-        if len(file_paths) < 2:
+        if len(file_paths) < 5:
             messagebox.showwarning("Insufficient Images", "Please upload at least 5 images.")
         else:
             self.open_image_window(file_paths)
@@ -138,10 +147,6 @@ class ImageProcessor:
 
         return max_values, min_values
 
-    def merge_all_vectors(self, vectors_s1_class1, vectors_s1_class2):
-        all_vectors_s1 = vectors_s1_class1 + vectors_s1_class2
-        return all_vectors_s1
-
     def process_all_images(self):
         # Lists to hold normalization vectors
         if self.selected_class == 1:
@@ -151,13 +156,16 @@ class ImageProcessor:
             vectors_s1_min = self.vectors_s1_class1_min
             vectors_m1_max = self.vectors_m1_class1_max
             vectors_m1_min = self.vectors_m1_class1_min
-            label = 1
         elif self.selected_class == 2:
             vectors_s1 = self.vectors_s1_class2
             vectors_m1 = self.vectors_m1_class2
             vectors_s1_max = self.vectors_s1_class2_max
             vectors_s1_min = self.vectors_s1_class2_min
-            label = -1
+        elif self.selected_class == 3:
+            vectors_s1 = self.vectors_s1_class3
+            vectors_m1 = self.vectors_m1_class3
+            vectors_s1_max = self.vectors_s1_class3_max
+            vectors_s1_min = self.vectors_s1_class3_min
         else:
             messagebox.showerror("Error", "No class selected for processing.")
             return
@@ -195,8 +203,6 @@ class ImageProcessor:
             print("Total black pixels:", total_black_pixels)
             print("Feature vector:", feature_vector)
 
-            self.y.append(label)
-
         self.print_matrix(vectors_s1, "Class - Normalized vectors by sum")
         self.print_matrix(vectors_m1, "Class - Normalized vectors by max")
 
@@ -219,10 +225,11 @@ class ImageProcessor:
             self.vectors_s1_class2_min = vectors_s1_min
             self.vectors_m1_class2_max = vectors_m1_max
             self.vectors_m1_class2_min = vectors_m1_min
-
-        self.all_vectors = self.merge_all_vectors(self.vectors_s1_class1, self.vectors_s1_class2)
-        self.print_matrix(self.all_vectors, 'test')
-        print(self.y)
+        elif self.selected_class == 3:
+            self.vectors_s1_class3_max = vectors_s1_max
+            self.vectors_s1_class3_min = vectors_s1_min
+            self.vectors_m1_class3_max = vectors_m1_max
+            self.vectors_m1_class3_min = vectors_m1_min
 
     def segment_and_draw_sectors(self, image):
         draw = ImageDraw.Draw(image)
