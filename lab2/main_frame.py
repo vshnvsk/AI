@@ -114,7 +114,7 @@ class ImageProcessor:
         file_paths = filedialog.askopenfilenames(title='Select Images',
                                                  filetypes=[('Image Files', '*.bmp *.jpeg *.png')])
 
-        if len(file_paths) < 2:
+        if len(file_paths) < 5:
             messagebox.showwarning("Insufficient Images", "Please upload at least 5 images.")
         else:
             self.open_image_window(file_paths)
@@ -229,7 +229,7 @@ class ImageProcessor:
         width, height = image.size
         center_x, center_y = width - 1, 0
 
-        sectors = 4
+        sectors = 6
         sector_angles = 90 / sectors
 
         for i in range(sectors + 1):
@@ -243,9 +243,9 @@ class ImageProcessor:
     def calculate_feature_vector(self, img):
         img_array = np.array(img)
         height, width = img_array.shape
-        feature_vector = [0] * 4
+        feature_vector = [0] * 6
         center_x, center_y = width - 1, 0
-        sectors = 4
+        sectors = 6
         sector_angles = 90 / sectors
 
         for y in range(height):

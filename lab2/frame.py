@@ -237,7 +237,7 @@ class ImageProcessor:
         width, height = self.processed_image.size
         center_x, center_y = width - 1, 0
 
-        sectors = 4
+        sectors = 6
         sector_angles = 90 / sectors  # Сектори займають 90 градусів
 
         for i in range(sectors + 1):
@@ -254,7 +254,7 @@ class ImageProcessor:
         total_black_pixels = np.sum(img_array == 0)
         center_x, center_y = width - 1, 0
 
-        sectors = 4
+        sectors = 6
         sector_angles = 90 / sectors
 
         feature_vector = []
